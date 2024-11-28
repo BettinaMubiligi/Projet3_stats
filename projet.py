@@ -42,23 +42,25 @@ class APrioriClassifier(utils.AbstractClassifier) :
             return 1
     
     def statsOnDF(self, df):
-
         vp=0
         vn=0
         fp=0
         fn=0
-        nb_positifs = len(df[df['target']==1])
-        nb_negatifs = len(df[df['target']==0])
         for i in range(len(df)):
             dic = utils.getNthDict(df,i)
-            if (self.estimClass(dic)==1 & dic['target']==1):
-                vp+=1
-            elif (self.estimClass(dic)==1 & dic['target']==0):
-                fp+=1
-            elif (self.estimClass(dic)==0 & dic['target']==1):
-                fn+=1
-            elif (self.estimClass(dic)==0 & dic["target"]==0):
-                vn+=1
-        dic_res = {'VP' : vp, 'VN' : vn, 'FP' : fp, 'FN' : fn, 'Précision' : vp/(vp+fp)}
-        #'Rappel' : vp/(vp+fn)
+            estime = self.estimClass(dic)
+            vrai = dic['target']
+            if estime == 1 and vrai == 1:
+                vp += 1
+            if estime == 1 and vrai == 0:
+                fp += 1
+            if estime == 0 and vrai == 0:
+                vn += 1
+            if estime == 0 and vrai == 1:
+                fn += 1
+            
+        precision = vp / (vp +fp) if (vp+fp) > 0 else 0
+        rappel = vp / (vp + fn) if (vp +fn) >0 else 0
+
+        dic_res = {'VP' : vp, 'VN' : vn, 'FP' : fp, 'FN' : fn, 'Précision' : precision, 'Rappel' : rappel}
         return dic_res
