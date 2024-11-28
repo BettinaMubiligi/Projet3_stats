@@ -64,3 +64,61 @@ class APrioriClassifier(utils.AbstractClassifier) :
 
         dic_res = {'VP' : vp, 'VN' : vn, 'FP' : fp, 'FN' : fn, 'Précision' : precision, 'Rappel' : rappel}
         return dic_res
+
+def P2D_l(df, attr):
+    nb_positifs = len(df[df['target']==1])
+    nb_negatifs = len(df[df['target']==0])
+    liste_val_attr = df[attr].unique()
+    dic_res = {1:{}, 0:{}}
+    for val in liste_val_attr:
+        for i in range (0,2):
+            nb_target_i = len(df[(df[attr]==val) & (df['target']==i)])
+            if i==0 : 
+                dic_res[i][val] = nb_target_i/nb_negatifs
+            elif i==1 : 
+                dic_res[i][val] = nb_target_i/nb_positifs
+    return dic_res
+
+    
+def P2D_p(df, attr):
+    liste_val_attr = df[attr].unique()
+    dic_res = {}
+    for val in liste_val_attr:
+        dic_res[val]={}
+        nb_total = len(df[df[attr]==val])
+        for i in range (0,2):
+            nb_target_i = len(df[(df[attr]==val) & (df['target']==i)])
+            if i==0 : 
+                dic_res[val][i] = nb_target_i/nb_total
+            elif i==1 : 
+                dic_res[val][i] = nb_target_i/nb_total
+    return dic_res
+
+class ML2DClassifier(APrioriClassifier): 
+    def __init__(self, df, attr):
+        dic_res = P2D_l(df, attr)
+        liste_pos=[]
+        liste_neg=[]
+        for val in df[attr].unique(): 
+            liste_pos.append(dic_res[1][val])
+            liste_neg.append(dic_res[0][val])
+        self.data = {attr : df[attr].unique(), 'Target=1' : liste_pos, 'Target=0' : liste_neg}
+        self.df_p2dl = pd.DataFrame(self.data)
+    
+    def estimClass(self, attrs):
+        attr = self.df_p2dl.columns[0]
+        print("attr : "+str(attr))
+        val_attr = attrs[attr]
+        print("val attr :" + str(val_attr))
+
+        ligne_voulue = self.df_p2dl[self.df_p2dl[attr]==val_attr]
+        print(ligne_voulue)
+        print (ligne_voulue[ligne_voulue.columns[1]])
+        if ligne_voulue.columns[1]>ligne_voulue.columns[0]:
+            return ligne_voulue.columns[1]
+        else :
+            return ligne_voulue.columns[0]
+
+
+
+
