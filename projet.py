@@ -311,6 +311,53 @@ class MAP2DClassifier(APrioriClassifier) :
 # Question 3.1 - Complexite en memoire
 ######
 
+def nbParams(data, attrs=[]): 
+    """
+    A partir d'un dataframe df et d'une liste d'attributs attrs, retourne la taille en memoire des tables de probabilites p(target|attr1,...,attrk)
+
+    Parameters
+    ----------
+        data : pandas.DataFrame
+            Le dataframe sur lequel on calculera les tables de probabilites
+        attrs : list
+            La liste des differents attributs sur lequel on veut calculer les probabilites conditionnelles P(target|attr)
+    
+    Returns
+    -------
+        La taille en octets des valeurs en memoire
+    """
+    somme=8 # Taille d'un float
+    if attrs==[] : 
+        liste_nb_val=[]
+        for attr in list(data.columns):
+            liste_nb_val.append(len(data[attr].unique()))
+    else : 
+        liste_nb_val=[]
+        for attr in attrs : 
+            liste_nb_val.append(len(data[attr].unique()))
+
+    for val in liste_nb_val:
+        somme*=val
+    
+    if somme<1024:
+        print (str(len(attrs))+" variable(s) : "+ str(somme) + " octets")
+    elif somme>=1024 and somme<1024*1024:
+        nb_ko = somme//1024
+        nb_o = somme%1024
+        print (str(len(attrs))+" variable(s) : "+ str(somme) + " octets = " + str(nb_ko) + "ko " + str(nb_o) + "o")
+    elif somme>=1024*1024 and somme<1024*1024*1024:
+        nb_mo = somme//(1024*1024)
+        nb_ko = (somme%(1024*2024))//1024
+        nb_o = (somme%(1024*2024))%1024
+        print (str(len(attrs))+" variable(s) : "+ str(somme) + " octets = " + str(nb_mo) + "mo " + str(nb_ko) + "ko " + str(nb_o) + "o")
+    else : 
+        nb_go = somme//(1024*1024*1024)
+        nb_mo = (somme%(1024*1024*1024))//(1024*1024)
+        nb_ko = ((somme%(1024*1024*1024))%(1024*1024))//1024
+        nb_o = ((somme%(1024*1024*1024))%(1024*1024))%1024
+        print (str(len(attrs))+" variable(s) : "+ str(somme) + " octets = " + str(nb_go) + "go " + str(nb_mo) + "mo " + str(nb_ko) + "ko " + str(nb_o) + "o")
+    return somme
+
 
 
 
