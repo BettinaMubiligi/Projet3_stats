@@ -9,7 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats
 import utils
-
+import networkx as nx
 ######
 # 1 - CLASSIFICATION A PRIORI 
 ######
@@ -297,7 +297,7 @@ class MAP2DClassifier(APrioriClassifier) :
 ######
 # Question 2.4 : Comparaison
 ######
-# Nous préférons ... parce que ...
+# Nous préférons .. parce que sa précision ...
 # et aussi parce que ...
 ######
 
@@ -380,7 +380,6 @@ def nbParamsIndep(data):
     somme = 0
     for attr in list(data.columns):
         somme+=len(data[attr].unique())*taille_float
-
     print (str(len(data.columns))+" variable(s) : "+ str(somme) + " octets")
     return somme
 
@@ -398,4 +397,85 @@ def nbParamsIndep(data):
 # Question 3.3.b : Complexite en independance partielle
 ######
 # 
+######
+
+######
+# Question 4.1: Exemple
+######
+""" Contruction d'un graphe orienté pour représenter une factorisation de loi jointe avec des variables indépendantes :
+    On utilise la fonction utils.drawGraphHorizontal("E;D;C;B;A") où représentée par un nœud isolé sans aucune arête.
+ """    
+""" Contruction d'un graphe orienté pour représenter une factorisation de loi jointe avec des variables sans indépendance :
+    On utilise la fonction utils.drawGraphHorizontal("A->B->C;A->D->E").
+ """ 
+
+######
+# Question 4.2: Naive Bayes
+######
+"""  Décomposision de la vraisemblance P(attr1, attr2, attr3, ....|target) = ( P(target | attr1, attr2, attr3...) * P(attr1, attr2, attr3...) ) / P(target)
+                                                                           =  ( P(target | attr1, attr2, attr3...) * P(attr2 | attr1) * P(attr3 | attr2)  ... ) / P(target)
+
+    Décomposision de la distribution a posteriori  
+  P(target | attr1, attr2, attr3, ....) = ( P(attr1, attr2, attr3...|target) * P(target)) / P(attr1, attr2, attr3...) 
+                                        = ( P(attr1, attr2, attr3...|target) * P(target)) / P(attr2 | attr1) * P(attr3 | attr2)  ... """
+
+######
+#
+######
+# Question 4.3: modèle graphique et naïve bayes
+######
+#4.3.a
+"""
+    A partir d'un dataframe et du nom de la colonne qui est la classe, dessine le graphe
+     du  modèle naïve bayes  où le noeud target est l'unique parent de tous les attributs.
+    Parameters
+    ----------
+        d : pandas.DataFrame
+            Le dataframe sur lequel on tracera le graphe
+        colonne : la colonne indépendante conditionellement (ici, target)
+    
+    Returns
+    -------
+        Le graphe du modèle naive Bayes.
+    """
+def drawNaiveBayes(d: pd.DataFrame, colonne):
+    liste_colonnes = d.columns.tolist()
+    chaine = " "
+    
+    for x in liste_colonnes :
+        if (x == 'target'):
+            break
+        else :
+            chaine = chaine+colonne+'->'+x+';'
+    return utils.drawGraph(chaine)
+
+#4.3.b
+"""
+    A partir d'un dataframe df retourne la taille en memoire des tables de probabilites avec le modèle
+    naive Bayes
+
+    Parameters
+    ----------
+        d : pandas.DataFrame
+            Le dataframe sur lequel on calculera les tables de probabilites
+        colonne : la colonne, ici target, indépendament conditionnelle
+    
+    Returns
+    -------
+        La taille en octets des valeurs en memoire
+    """
+def nbParamsNaiveBayes(d:pd.DataFrame, target, colonnes=None):
+    somme = len(d[target].unique())*8
+    if colonnes is None:
+        colonnes = d.columns.tolist()
+    
+    for attr in colonnes:
+        if (attr != target):
+            somme+= (len(d[target].unique())*8)*len(d[attr].unique())
+    if somme < 1024 :
+        print (str(len(colonnes))+" variable(s) : "+ str(somme) + " octets")
+    else :
+        print (str(len(colonnes))+" variable(s) : "+ str(somme) + " octets"+" = "+ str(somme//1024)+"ko "+str(somme %1024)+"o")
+    return somme
+
 ######
