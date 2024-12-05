@@ -383,3 +383,19 @@ def nbParamsIndep(data):
 
     print (str(len(data.columns))+" variable(s) : "+ str(somme) + " octets")
     return somme
+
+######
+# Question 3.3 : Independance conditionnelle
+######
+
+######
+# Question 3.3.a : Preuve
+######
+# 
+######
+
+######
+# Question 3.3.b : Complexite en independance partielle
+######
+# 
+######
