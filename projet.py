@@ -10,16 +10,37 @@ import matplotlib.pyplot as plt
 import scipy.stats
 import utils
 
-def getPrior(train) : 
-    data_true = train[train["target"]==1]
-    est = len(data_true)/len(train)
+######
+# 1 - CLASSIFICATION A PRIORI 
+######
 
-    moyenne = np.mean(np.array(train['target']))  # calcul de la moyenne 
-    variance = np.std(np.array(train['target'])) # calcul de la variance 
+######
+# Question 1.1 : Calcul de la probabilite a priori
+######
+
+def getPrior(data) : 
+    """
+    A partir d'un dataframe data, retourne un dictionnaire compose de l'estimation des cas positifs dans cette base et le calcul de l'intervalle de confiance a 95% pour cette estimation
+
+    Parameters
+    ----------
+        data: pandas.DataFrame
+            La dataframe des donnees qu'on va utiliser pour l'estimation
+    
+    Returns
+    -------
+        Un dictionnaire avec la probabilite d'avoir des cas positifs dans la base data ainsi que l'intervalle de confiance à 95% pour l'estimation de cette probabilite
+    """
+
+    data_true = data[data["target"]==1] # Obtention de la table avec uniquement les cas posiitifs dans data
+    est = len(data_true)/len(data)
+
+    moyenne = np.mean(np.array(data['target']))  # Calcul de la moyenne 
+    variance = np.std(np.array(data['target'])) # Calcul de la variance 
   
     # Calcul de l'intervalle de confiance à 95%
-    s = scipy.stats.sem(np.array(train['target']))
-    i = s * scipy.stats.t.ppf((1 + 0.95) / 2., len(train)-1)
+    s = scipy.stats.sem(np.array(data['target']))
+    i = s * scipy.stats.t.ppf((1 + 0.95) / 2., len(data)-1)
     marge_sup = moyenne+i
     marge_inf= moyenne-i
     res = {
@@ -29,19 +50,61 @@ def getPrior(train) :
     }
     return res 
 
+######
+# Question 1.2 : Programmation orientee objet dans la hierarchie des Classifier
+######
+
 class APrioriClassifier(utils.AbstractClassifier) :
+    """
+    Ce classifieur permet d'estimer la classe en fonction de certains attributs.
+    """ 
     def __init__(self, df):
         self.df=df
+    
+    #####
+    # Question 1.2.a
+    #####
 
     def estimClass(self, attrs):
+        """
+        A partir d'un dictionnaire d'attributs attrs, estime la classe 0 ou 1 de l'individu ayant ces attributs attrs.
+
+        Parameters
+        ----------
+            self : Self
+            attrs : Dic[str, value]
+                Le dictionnaire des differents attributs qui composent le dataframe df de self
+    
+        Returns
+        -------
+            La classe 0 ou 1 estimee.
+        """
         if (not attrs):
             return 0
         elif (attrs["cp"]==0 | attrs["exang"]==1 | attrs["oldpeak"]>5 | attrs["ca"]>0):
             return 0
         else : 
             return 1
+
+    #####
+    # Question 1.2.b : Evaluation de classifieurs
+    #####
     
     def statsOnDF(self, df):
+        """
+        A partir d'un dataframe df, retourne un dictionnaire avec le nombre de vrais negatifs, faux negatifs, vrais positifs et vrais negatifs estimes par le classifieur estimClass
+        ainsi que la precision et le rappel du classifieur.
+
+        Parameters
+        ----------
+            self : Self
+            df : pandas.DataFrame
+                La dataframe sur laquelle on evaluera la fiabilite du classifieur.
+    
+        Returns
+        -------
+            Un dictionnaire du nombre de vrais positifs, faux positifs, vrais negatifs et faux negatifs estimes par le classifieur ainsi que la precision et le rappel du classifieur.
+        """
         vp=0
         vn=0
         fp=0
@@ -65,7 +128,34 @@ class APrioriClassifier(utils.AbstractClassifier) :
         dic_res = {'VP' : vp, 'VN' : vn, 'FP' : fp, 'FN' : fn, 'Précision' : precision, 'Rappel' : rappel}
         return dic_res
 
+"""----------------------------------------------------------------"""
+
+######
+# 2 - CLASSIFICATION PROBABILISTE A 2 DIMENSIONS
+######
+
+######
+# Question 2.1 : Probabilites conditionnelles
+######
+
+######
+# Question 2.1.a
+######
+
 def P2D_l(df, attr):
+    """
+    A partir d'un dataframe df et d'un attribut attr, retourne un dictionnaire vec la repartition selon la valeur de target des differentes valeurs possibles d'attribut attr
+    Parametersa
+    ----------
+        df : pandas.DataFrame
+            La dataframe sur laquelle on calculera la distribution des probabilites
+        attr : str
+            L'attribut qu'on utilisera pour calculer la distribution des donnees dans df.
+    
+    Returns
+    -------
+        Un dictionnaire de la repartition des valeurs possibles pour target (0 ou 1) selon les differents attributs possibles attr
+    """
     nb_positifs = len(df[df['target']==1])
     nb_negatifs = len(df[df['target']==0])
     liste_val_attr = df[attr].unique()
@@ -79,8 +169,24 @@ def P2D_l(df, attr):
                 dic_res[i][val] = nb_target_i/nb_positifs
     return dic_res
 
-    
+######
+# Question 2.1.b
+######
+
 def P2D_p(df, attr):
+    """
+    A partir d'un dataframe df et d'un attribut attr, retourne un dictionnaire avec la repartition des differentes valeurs possibles d'attribut attr selon la valeur de target (0 ou 1)
+    Parameters
+    ----------
+        df : pandas.DataFrame
+            La dataframe sur laquelle on calculera la distribution des probabilites
+        attr : str
+            L'attribut qu'on utilisera pour calculer la distribution des donnees dans df.
+    
+    Returns
+    -------
+        Un dictionnaire de la repartition des differentes valeurs possibles pour attr selon la valeur de target (0 ou 1)
+    """
     liste_val_attr = df[attr].unique()
     dic_res = {}
     for val in liste_val_attr:
@@ -93,8 +199,15 @@ def P2D_p(df, attr):
             elif i==1 : 
                 dic_res[val][i] = nb_target_i/nb_total
     return dic_res
-    
+
+######
+# Question 2.2 : Classifieurs 2D par maximum de vraisemblance
+######
+
 class ML2DClassifier(APrioriClassifier): 
+    """
+    Ce classifieur permet d'estimer la classe d'un invididu selon la classification a 2 dimensions par maximum de vraisemblance
+    """ 
     def __init__(self, df, attr):
         dic_res = P2D_l(df, attr)
         liste_pos=[]
@@ -106,18 +219,42 @@ class ML2DClassifier(APrioriClassifier):
         self.df_p2dl = pd.DataFrame(self.data)
     
     def estimClass(self, attrs):
+        """
+        A partir d'un dictionnaire d'attributs attrs, estime la classe 0 ou 1 de l'individu ayant ces attributs attrs.
+
+        Parameters
+        ----------
+            self : Self
+            attrs : Dic[str, value]
+                Le dictionnaire des differents attributs qui composent le dataframe df de self
+    
+        Returns
+        -------
+            La classe 0 ou 1 estimee.
+        """
+
+        # On recupere l'attribut sur lequel on souhaite estimer
         attr = self.df_p2dl.columns[0]
         val_attr = attrs[attr]
 
         ligne_voulue = self.df_p2dl[self.df_p2dl[attr]==val_attr]
+        # On recupere la valeur de la probabilite que target=1 pour l'attribut
         val_target_1 = ligne_voulue[ligne_voulue.columns[1]].values[0]
+        # On recupere la valeur de la probabilite que target=0 pour l'attribut
         val_target_0 = ligne_voulue[ligne_voulue.columns[2]].values[0]
         if val_target_0>val_target_1:
             return 0
         else :
             return 1
 
+######
+# Question 2.3 : Classifieurs 2D par maximum a posteriori
+######
+
 class MAP2DClassifier(APrioriClassifier) : 
+    """
+    Ce classifieur permet d'estimer la classe d'un invididu selon la classification a 2 dimensions par maximum a posteriori
+    """ 
     def __init__(self, df, attr):
         dic_res = P2D_p(df, attr)
         liste_pos=[]
@@ -129,13 +266,51 @@ class MAP2DClassifier(APrioriClassifier) :
         self.df_p2dp = pd.DataFrame(self.data)
     
     def estimClass(self, attrs):
+        """
+        A partir d'un dictionnaire d'attributs attrs, estime la classe 0 ou 1 de l'individu ayant ces attributs attrs.
+
+        Parameters
+        ----------
+            self : Self
+            attrs : Dic[str, value]
+                Le dictionnaire des differents attributs qui composent le dataframe df de self
+    
+        Returns
+        -------
+            La classe 0 ou 1 estimee.
+        """
+
+        # On recupere l'attribut sur lequel on souhaite estimer
         attr = self.df_p2dp.columns[0]
         val_attr = attrs[attr]
 
         ligne_voulue = self.df_p2dp[self.df_p2dp[attr]==val_attr]
+        # On recupere la valeur de la probabilite que target=1 pour l'attribut
         val_target_1 = ligne_voulue[ligne_voulue.columns[1]].values[0]
+        # On recupere la valeur de la probabilite que target=0 pour l'attribut
         val_target_0 = ligne_voulue[ligne_voulue.columns[2]].values[0]
         if val_target_0>val_target_1:
             return 0
         else :
             return 1
+    
+######
+# Question 2.4 : Comparaison
+######
+# Nous préférons ... parce que ...
+# et aussi parce que ...
+######
+
+"""----------------------------------------------------------------"""
+
+######
+# 3 - COMPLEXITES
+######
+
+######
+# Question 3.1 - Complexite en memoire
+######
+
+
+
+
