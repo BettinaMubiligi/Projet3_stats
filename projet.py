@@ -359,5 +359,27 @@ def nbParams(data, attrs=[]):
     return somme
 
 
+######
+# Question 3.2 - Complexite en memoire sous hypothese d'independance complete
+######
 
+def nbParamsIndep(data): 
+    """
+    A partir d'un dataframe df retourne la taille en memoire des tables de probabilites 
 
+    Parameters
+    ----------
+        data : pandas.DataFrame
+            Le dataframe sur lequel on calculera les tables de probabilites
+    
+    Returns
+    -------
+        La taille en octets des valeurs en memoire
+    """
+    taille_float = 8
+    somme = 0
+    for attr in list(data.columns):
+        somme+=len(data[attr].unique())*taille_float
+
+    print (str(len(data.columns))+" variable(s) : "+ str(somme) + " octets")
+    return somme
