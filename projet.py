@@ -412,12 +412,10 @@ def nbParamsIndep(data):
 ######
 # Question 4.2: Naive Bayes
 ######
-"""  Décomposision de la vraisemblance P(attr1, attr2, attr3, ....|target) = ( P(target | attr1, attr2, attr3...) * P(attr1, attr2, attr3...) ) / P(target)
-                                                                           =  ( P(target | attr1, attr2, attr3...) * P(attr2 | attr1) * P(attr3 | attr2)  ... ) / P(target)
+"""  Décomposision de la vraisemblance P(attr1, attr2, attr3, ....|target) =  P(attr1 | target ) * P(attr2 | target )*P(attr3 | target ) ... 
 
     Décomposision de la distribution a posteriori  
-  P(target | attr1, attr2, attr3, ....) = ( P(attr1, attr2, attr3...|target) * P(target)) / P(attr1, attr2, attr3...) 
-                                        = ( P(attr1, attr2, attr3...|target) * P(target)) / P(attr2 | attr1) * P(attr3 | attr2)  ... """
+  P(target | attr1, attr2, attr3, ....) = ( P(attr1, attr2, attr3...|target) * P(target)) / P(attr1, attr2, attr3...) """
 
 ######
 #
