@@ -93,7 +93,7 @@ def P2D_p(df, attr):
             elif i==1 : 
                 dic_res[val][i] = nb_target_i/nb_total
     return dic_res
-
+    
 class ML2DClassifier(APrioriClassifier): 
     def __init__(self, df, attr):
         dic_res = P2D_l(df, attr)
@@ -107,18 +107,35 @@ class ML2DClassifier(APrioriClassifier):
     
     def estimClass(self, attrs):
         attr = self.df_p2dl.columns[0]
-        print("attr : "+str(attr))
         val_attr = attrs[attr]
-        print("val attr :" + str(val_attr))
 
         ligne_voulue = self.df_p2dl[self.df_p2dl[attr]==val_attr]
-        print(ligne_voulue)
-        print (ligne_voulue[ligne_voulue.columns[1]])
-        if ligne_voulue.columns[1]>ligne_voulue.columns[0]:
-            return ligne_voulue.columns[1]
+        val_target_1 = ligne_voulue[ligne_voulue.columns[1]].values[0]
+        val_target_0 = ligne_voulue[ligne_voulue.columns[2]].values[0]
+        if val_target_0>val_target_1:
+            return 0
         else :
-            return ligne_voulue.columns[0]
+            return 1
 
+class MAP2DClassifier(APrioriClassifier) : 
+    def __init__(self, df, attr):
+        dic_res = P2D_p(df, attr)
+        liste_pos=[]
+        liste_neg=[]
+        for val in df[attr].unique(): 
+            liste_pos.append(dic_res[val][1])
+            liste_neg.append(dic_res[val][0])
+        self.data = {attr : df[attr].unique(), 'Target=1' : liste_pos, 'Target=0' : liste_neg}
+        self.df_p2dp = pd.DataFrame(self.data)
+    
+    def estimClass(self, attrs):
+        attr = self.df_p2dp.columns[0]
+        val_attr = attrs[attr]
 
-
-
+        ligne_voulue = self.df_p2dp[self.df_p2dp[attr]==val_attr]
+        val_target_1 = ligne_voulue[ligne_voulue.columns[1]].values[0]
+        val_target_0 = ligne_voulue[ligne_voulue.columns[2]].values[0]
+        if val_target_0>val_target_1:
+            return 0
+        else :
+            return 1
