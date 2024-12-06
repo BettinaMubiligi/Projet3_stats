@@ -427,7 +427,9 @@ def nbParamsIndep(data):
 # Question 4.3: modèle graphique et naïve bayes
 ######
 #4.3.a
-"""
+
+def drawNaiveBayes(d: pd.DataFrame, colonne):
+    """
     A partir d'un dataframe et du nom de la colonne qui est la classe, dessine le graphe
      du  modèle naïve bayes  où le noeud target est l'unique parent de tous les attributs.
     Parameters
@@ -440,7 +442,6 @@ def nbParamsIndep(data):
     -------
         Le graphe du modèle naive Bayes.
     """
-def drawNaiveBayes(d: pd.DataFrame, colonne):
     liste_colonnes = d.columns.tolist()
     chaine = " "
     
@@ -452,7 +453,9 @@ def drawNaiveBayes(d: pd.DataFrame, colonne):
     return utils.drawGraph(chaine)
 
 #4.3.b
-"""
+
+def nbParamsNaiveBayes(d:pd.DataFrame, target, colonnes=None):
+    """
     A partir d'un dataframe df retourne la taille en memoire des tables de probabilites avec le modèle
     naive Bayes
 
@@ -466,7 +469,6 @@ def drawNaiveBayes(d: pd.DataFrame, colonne):
     -------
         La taille en octets des valeurs en memoire
     """
-def nbParamsNaiveBayes(d:pd.DataFrame, target, colonnes=None):
     somme = len(d[target].unique())*8
     if colonnes is None:
         colonnes = d.columns.tolist()
