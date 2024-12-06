@@ -7,7 +7,7 @@ import numpy as np
 import math 
 import pandas as pd
 import matplotlib.pyplot as plt
-import scipy.stats
+import scipy.stats as ss
 import utils
 import networkx as nx
 ######
@@ -297,8 +297,8 @@ class MAP2DClassifier(APrioriClassifier) :
 ######
 # Question 2.4 : Comparaison
 ######
-# Nous préférons .. parce que sa précision ...
-# et aussi parce que ...
+# Nous préférons le modèle de classifieur par vraisemblance (ML2DClassifier) parce que sa précision est globalement meilleure que les autres modèles
+# et aussi parce que le modèle permet une estimation plus nuancée de la classe que le modèle à postériori et le modèle à priori.
 ######
 
 """----------------------------------------------------------------"""
@@ -399,6 +399,10 @@ def nbParamsIndep(data):
 # 
 ######
 
+
+
+######
+# 4 -  Représentation des indépendances conditionnelles : Modèles graphiques
 ######
 # Question 4.1: Exemple
 ######
@@ -475,5 +479,264 @@ def nbParamsNaiveBayes(d:pd.DataFrame, target, colonnes=None):
     else :
         print (str(len(colonnes))+" variable(s) : "+ str(somme) + " octets"+" = "+ str(somme//1024)+"ko "+str(somme %1024)+"o")
     return somme
+
+######
+
+class MLNaiveBayesClassifier(APrioriClassifier) : 
+    """
+    Ce classifieur  utilise le maximum de vraisemblance (ML)  pour estimer la classe d'un individu en utilisant l'hypothèse du Naïve Bayes. 
+    On utilise la fonction P2D_l(self, attr) pour avoir un 
+    dictionnaire associant à la valeur t un dictionnaire asssociant à la valeur a la probabilité  P(attr=a|target=t)  .
+    """ 
+    def __init__(self, df):
+        self.df = df
+        #stockage des attributs pour le calcul des probabilités
+        self.attr = [col for col in df.columns if col != 'target']
+         #stockage des probabilités selon la valeur de la classe target (1 ou 0)
+        self.probas_target = df['target'].value_counts(normalize=True).to_dict()
+        probas = {}
+        #calcul des probabilités d'appartenance à une classe pour chaque attributs, stockage dans probas
+        #fonction P2D_l calcule dans df la distribution de probabilité (dictionnaire) 
+        for attr in self.attr:
+            probas[attr] = P2D_l(self.df, attr)
+        self.probas_condit = probas
+
+
+    def estimProbas(self, attrs):
+        """
+        A partir d'un dictionnaire d'attributs attrs, estime les probabilités de classe 0 ou 1 en utilisant
+         le maximum de vraisemblance (ML) , pour chaque attributs.
+
+        Parameters
+        ----------
+            self : Self
+            attrs : Dic[str, value]
+                Le dictionnaire des differents attributs qui composent le dataframe df de self
+    
+        Returns
+        -------
+            Le dictionnaire probas avec chaques probabilités par attributs.
+        """
+        
+        #probabilités à 1 pour chaque classe (au départ)
+        probas = {0: 1, 1: 1}
+        for target in [0, 1]:
+            """ Pour chaque classe et chaque attribut, la probabilité est obtenue en multipliant la probabilité conditionnelle de chaque valeur
+            d'attributs  :
+            P(att1 |target_0) = P(att1_valeur1| target_0)* P(att1_valeur2| target_0)* P(att1_valeur3| target_0)*... 
+            P(att1 |target_1) = P(att1_valeur1| target_1)* P(att1_valeur2| target_1)* P(att1_valeur3| target_1)*...
+            """
+            for attr, value in attrs.items():
+                if attr in self.probas_condit and value in self.probas_condit[attr][target]:
+                    probas[target] *= self.probas_condit[attr][target][value]
+                else:
+                    probas[target] *= 1  # Une petite valeur sinon probabilité nulles au test 
+        
+        return probas
+
+    def estimClass(self, attrs):
+        """
+        A partir d'un dictionnaire d'attributs attrs, calcule les probas avec estimProbas et estime la classe correspondante, selon
+        la probabilité la plus élevée.
+
+        Parameters
+        ----------
+            self : Self
+            attrs : Dic[str, value]
+                Le dictionnaire des differents attributs qui composent le dataframe df de self
+    
+        Returns
+        -------
+           La classe avec la plus grande probabilité.
+        """
+        probas = self.estimProbas(attrs)
+        #on renvoie la classe avec la plus grande probabilité (clé 0 ou 1 de probas ayant la plus grande valeur)
+        return max(probas, key=probas.get)
+
+class MAPNaiveBayesClassifier(APrioriClassifier) : 
+    """
+    Ce classifieur utilise le maximum a posteriori (MAP) pour estimer la classe d'un individu en utilisant l'hypothèse du Naïve Bayes.
+    Méthode similaire celle du classifieur qui utilise le maximum de vraisemblance (ML), mais on utilise la fonction P2D_p(self, attr) pour avoir un 
+    dictionnaire associant à la valeur a un dictionnaire asssociant à la valeur t la probabilité  P(target=t|attr=a).
+    """ 
+    def __init__(self, df):
+        self.df = df
+        self.attr = [col for col in df.columns if col != 'target']
+        self.probas_target_p = df['target'].value_counts(normalize=True).to_dict()
+        probas_p = {}
+        for attr in self.attr:
+            probas_p[attr] = P2D_p(self.df, attr)
+        self.probas_condit = probas_p
+      
+
+    def estimProbas(self, attrs):
+        """
+        A partir d'un dictionnaire d'attributs attrs, estime les probabilités de classe 0 ou 1 en utilisant
+         le maximum a posteriori (MAP) , pour chaque attributs. Noter que probas_p est un dictionnaire de la forme
+        {'attributN' : {valeur_N_de_l'attribut{ proba_classe_0: ,proba_classe_1},  valeur_N+1_de_l'attribut{ proba_classe_0: ,proba_classe_1}, etc}, 'attributN+1':{..}}}}
+
+        Parameters
+        ----------
+            self : Self
+            attrs : Dic[str, value]
+                Le dictionnaire des differents attributs qui composent le dataframe df de self
+    
+        Returns
+        -------
+            Le dictionnaire probas avec chaques probabilités par attributs.
+        """
+        
+        probas_p = {0: 1, 1: 1}
+        for target in [0, 1]:
+            for attr, value in attrs.items():
+                if attr in self.probas_condit:
+                    if value in self.probas_condit[attr]:
+                        probas_p[target] *= self.probas_condit[attr][value][target]
+                    else:
+                        probas_p[target] *= 1  
+        return probas_p
+
+    def estimClass(self, attrs):
+        """
+        A partir d'un dictionnaire d'attributs attrs, calcule les probas avec estimProbas et estime la classe correspondante, selon
+        la probabilité la plus élevée.
+
+        Parameters
+        ----------
+            self : Self
+            attrs : Dic[str, value]
+                Le dictionnaire des differents attributs qui composent le dataframe df de self
+    
+        Returns
+        -------
+           La classe avec la plus grande probabilité.
+        """
+        probas = self.estimProbas(attrs)
+        #on renvoie la classe avec la plus grande probabilité (clé 0 ou 1 de probas ayant la plus grande valeur)
+        return max(probas, key=probas.get)
+
+######
+# 5 - Feature selection dans le cadre du classifier naive bayes
+######
+
+######
+# Question 5.1
+######
+
+def isIndepFromTarget(df,attr,x):
+    """
+        Vérifie si attr est indépendant de target au seuil de x%, utilisation de la méthode chi2_contingency de scipy.stats,  qui prend en argument
+        une une table de contingence du DataFrame df,  créée avec attr et target, et renvoie la valeur  chi-carré, et de la p_valeur que l'on va comparer au seuil x.
+        Parameters
+        ----------
+           df : pandas.DataFrame
+             Le dataframe contenant les données
+           attr : str
+             Le nom de l'attribut à tester
+           x : float
+             Le seuil en pourcentage
+        Returns
+        -------
+           Booléen True ou False 
+        """
+    #création de la table de contigence entre les colonnes : nombre d'occurences à 2 dimensions (fréquences) pour chaque attribut par rapport à la valeur de target
+    table = pd.crosstab(df[attr], df['target'])
+    """ On utilise chi2_contigency pour calculer les fréquences attendues si attr et target étaient indépendantes, puis
+     on récupère la p_valeur, la probabilté d'obtenir une fréquence si les variables sont indépendantes  """
+    chi2, p_valeur, dof, freq_attendue = ss.chi2_contingency(table)
+    #On compare la p valeur à x, pour voir si elle dépasse bien le seuil
+    if (p_valeur > x ):
+        return True
+    return False
+######
+
+
+######
+# Question 5.2
+######
+class ReducedMLNaiveBayesClassifier(MLNaiveBayesClassifier) : 
+    """
+    Ce classifieur  utilise le maximum de vraisemblance (ML)  pour estimer la classe d'un individu en utilisant l'hypothèse du Naïve Bayes. 
+    Il utilise la fonction isIndepFromTarget(df, attr, x) pour réduire le classifieur en ne gardant que les attributs indépendants de target.
+    """ 
+    def __init__(self, df, x):
+        self.df = df
+        #on modifie légèrement le cnstructeur pour ne prendre en compte que les variables dépendantes de target
+        self.attr = [col for col in df.columns if col != 'target' and isIndepFromTarget(df, col, x) is False]
+        self.probas_target = df['target'].value_counts(normalize=True).to_dict()
+        probas = {}
+
+        for attr in self.attr:
+            probas[attr] = P2D_l(self.df, attr)
+        self.probas_condit = probas
+
+
+    
+    def draw(self):
+        """
+    Dessine un graph à partir d'une d'une liste d'attributs, transformée en chaine.
+
+    Parameters
+    ----------
+      self: Self
+    Returns
+    -------
+      Image
+        l'image représentant le graphe
+    """
+        liste_colonnes = self.attr
+        chaine = " "
+        
+        for x in liste_colonnes :
+            if (x == 'target'):
+                break
+            else :
+                chaine = chaine+'target'+'->'+x+';'
+        return utils.drawGraph(chaine)
+
+
+class ReducedMAPNaiveBayesClassifier(MAPNaiveBayesClassifier) : 
+    """
+    Ce classifieur  utilise le maximum à posteriori (MAP)  pour estimer la classe d'un individu en utilisant l'hypothèse du Naïve Bayes. 
+    Il utilise la fonction isIndepFromTarget(df, attr, x) pour réduire le classifieur en ne gardant que les attributs indépendants de target.
+    """ 
+    def __init__(self, df, x):
+        self.df = df
+        #on modifie légèrement le cnstructeur pour ne prendre en compte que les variables dépendantes de target
+        self.attr = [col for col in df.columns if col != 'target' and isIndepFromTarget(df, col, x) is False]
+        self.probas_target_p = df['target'].value_counts(normalize=True).to_dict()
+        probas_p = {}
+        for attr in self.attr:
+            probas_p[attr] = P2D_p(self.df, attr)
+        self.probas_condit = probas_p
+    
+
+    
+    def draw(self):
+        """
+    Dessine un graph à partir d'une d'une liste d'attributs, transformée en chaine.
+
+    Parameters
+    ----------
+      self: Self
+    Returns
+    -------
+      Image
+        l'image représentant le graphe
+    """
+        liste_colonnes = self.attr
+        chaine = " "
+        
+        for x in liste_colonnes :
+            if (x == 'target'):
+                break
+            else :
+                chaine = chaine+'target'+'->'+x+';'
+        return utils.drawGraph(chaine)
+
+
+
+
+
 
 ######
