@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import scipy.stats as ss
 import utils
 import networkx as nx
+
 ######
 # 1 - CLASSIFICATION A PRIORI 
 ######
@@ -39,14 +40,14 @@ def getPrior(data) :
     variance = np.std(np.array(data['target'])) # Calcul de la variance 
   
     # Calcul de l'intervalle de confiance à 95%
-    s = scipy.stats.sem(np.array(data['target']))
-    i = s * scipy.stats.t.ppf((1 + 0.95) / 2., len(data)-1)
+    s = ss.sem(np.array(data['target']))
+    i = s * ss.t.ppf((1 + 0.95) / 2., len(data)-1)
     marge_sup = moyenne+i
     marge_inf= moyenne-i
     res = {
         'estimation' : est,
-        'min5pourcent' : marge_inf,
-        'max5pourcent': marge_sup
+        'min5pourcent' : float(marge_inf),
+        'max5pourcent': float(marge_sup)
     }
     return res 
 
@@ -128,7 +129,7 @@ class APrioriClassifier(utils.AbstractClassifier) :
         dic_res = {'VP' : vp, 'VN' : vn, 'FP' : fp, 'FN' : fn, 'Précision' : precision, 'Rappel' : rappel}
         return dic_res
 
-"""----------------------------------------------------------------"""
+"""----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"""
 
 ######
 # 2 - CLASSIFICATION PROBABILISTE A 2 DIMENSIONS
@@ -164,9 +165,9 @@ def P2D_l(df, attr):
         for i in range (0,2):
             nb_target_i = len(df[(df[attr]==val) & (df['target']==i)])
             if i==0 : 
-                dic_res[i][val] = nb_target_i/nb_negatifs
+                dic_res[i][int(val)] = nb_target_i/nb_negatifs
             elif i==1 : 
-                dic_res[i][val] = nb_target_i/nb_positifs
+                dic_res[i][int(val)] = nb_target_i/nb_positifs
     return dic_res
 
 ######
@@ -190,14 +191,14 @@ def P2D_p(df, attr):
     liste_val_attr = df[attr].unique()
     dic_res = {}
     for val in liste_val_attr:
-        dic_res[val]={}
+        dic_res[int(val)]={}
         nb_total = len(df[df[attr]==val])
         for i in range (0,2):
             nb_target_i = len(df[(df[attr]==val) & (df['target']==i)])
             if i==0 : 
-                dic_res[val][i] = nb_target_i/nb_total
+                dic_res[int(val)][i] = nb_target_i/nb_total
             elif i==1 : 
-                dic_res[val][i] = nb_target_i/nb_total
+                dic_res[int(val)][i] = nb_target_i/nb_total
     return dic_res
 
 ######
@@ -301,7 +302,7 @@ class MAP2DClassifier(APrioriClassifier) :
 # et aussi parce que le modèle permet une estimation plus nuancée de la classe que le modèle à postériori et le modèle à priori.
 ######
 
-"""----------------------------------------------------------------"""
+"""----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"""
 
 ######
 # 3 - COMPLEXITES
@@ -340,22 +341,22 @@ def nbParams(data, attrs=[]):
         somme*=val
     
     if somme<1024:
-        print (str(len(attrs))+" variable(s) : "+ str(somme) + " octets")
+        print (str(len(liste_nb_val))+" variable(s) : "+ str(somme) + " octets")
     elif somme>=1024 and somme<1024*1024:
         nb_ko = somme//1024
         nb_o = somme%1024
-        print (str(len(attrs))+" variable(s) : "+ str(somme) + " octets = " + str(nb_ko) + "ko " + str(nb_o) + "o")
+        print (str(len(liste_nb_val))+" variable(s) : "+ str(somme) + " octets = " + str(nb_ko) + "ko " + str(nb_o) + "o")
     elif somme>=1024*1024 and somme<1024*1024*1024:
         nb_mo = somme//(1024*1024)
         nb_ko = (somme%(1024*2024))//1024
         nb_o = (somme%(1024*2024))%1024
-        print (str(len(attrs))+" variable(s) : "+ str(somme) + " octets = " + str(nb_mo) + "mo " + str(nb_ko) + "ko " + str(nb_o) + "o")
+        print (str(len(liste_nb_val))+" variable(s) : "+ str(somme) + " octets = " + str(nb_mo) + "mo " + str(nb_ko) + "ko " + str(nb_o) + "o")
     else : 
         nb_go = somme//(1024*1024*1024)
         nb_mo = (somme%(1024*1024*1024))//(1024*1024)
         nb_ko = ((somme%(1024*1024*1024))%(1024*1024))//1024
         nb_o = ((somme%(1024*1024*1024))%(1024*1024))%1024
-        print (str(len(attrs))+" variable(s) : "+ str(somme) + " octets = " + str(nb_go) + "go " + str(nb_mo) + "mo " + str(nb_ko) + "ko " + str(nb_o) + "o")
+        print (str(len(liste_nb_val))+" variable(s) : "+ str(somme) + " octets = " + str(nb_go) + "go " + str(nb_mo) + "mo " + str(nb_ko) + "ko " + str(nb_o) + "o")
     return somme
 
 
@@ -390,19 +391,29 @@ def nbParamsIndep(data):
 ######
 # Question 3.3.a : Preuve
 ######
-# 
+# On cherche a prouver que P(A,B,C)=P(A)*P(B|A)*P(C|B)
+# On sait que A est independant de B sachant C donc on a P(A|B,C) = P(A|C)
+# On part de P(A,B,C) et on a P(A,B,C)=P(A)*P(B|A)*P(C|A,B) 
+# Or, puisque A est independant de B sachant C, on a donc P(C|A,B)=P(C|B)
+# On a donc bien P(A,B,C)=P(A)*P(B|A)*P(C|B)
 ######
 
 ######
 # Question 3.3.b : Complexite en independance partielle
 ######
-# 
+# Si les variables A, B et C ont chacune 5 valeurs, la taille en memoire avec utilisation de l'independance conditionnelle est de :
+# taille_totale = taille(A)+taille(B|A)+taille(C|B) = taille(A)+taille(B)*taille(A)+taille(C)*taille(B) = 5*8+5*8*5*8+5*8*5*8 = 3 240 octets
+
+# Si les variables A, B et C ont chacune 5 valeurs, la taille en memoire sans utilisation de l'independance conditionnelle est de : 
+# taille_totale = taille(A)+taille(B)*taille(C) = 5*8+5*8*5*8 = 1 640 octets
 ######
 
-
+"""----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"""
 
 ######
-# 4 -  Représentation des indépendances conditionnelles : Modèles graphiques
+# 4 -  REPRESENTATION DES INDEPENDANCES CONDITIONNELLES : MODELES GRAPHIQUES
+######
+
 ######
 # Question 4.1: Exemple
 ######
@@ -412,6 +423,7 @@ def nbParamsIndep(data):
 """ Contruction d'un graphe orienté pour représenter une factorisation de loi jointe avec des variables sans indépendance :
     On utilise la fonction utils.drawGraphHorizontal("A->B->C;A->D->E").
  """ 
+######
 
 ######
 # Question 4.2: Naive Bayes
@@ -420,13 +432,15 @@ def nbParamsIndep(data):
 
     Décomposision de la distribution a posteriori  
   P(target | attr1, attr2, attr3, ....) = ( P(attr1, attr2, attr3...|target) * P(target)) / P(attr1, attr2, attr3...) """
+######
 
 ######
-#
+# Question 4.3 - Modèle graphique et naïve bayes
 ######
-# Question 4.3: modèle graphique et naïve bayes
+
 ######
-#4.3.a
+# Question 4.3.a
+######
 
 def drawNaiveBayes(d: pd.DataFrame, colonne):
     """
@@ -452,7 +466,9 @@ def drawNaiveBayes(d: pd.DataFrame, colonne):
             chaine = chaine+colonne+'->'+x+';'
     return utils.drawGraph(chaine)
 
-#4.3.b
+######
+# Question 4.3.b
+######
 
 def nbParamsNaiveBayes(d:pd.DataFrame, target, colonnes=None):
     """
@@ -482,6 +498,8 @@ def nbParamsNaiveBayes(d:pd.DataFrame, target, colonnes=None):
         print (str(len(colonnes))+" variable(s) : "+ str(somme) + " octets"+" = "+ str(somme//1024)+"ko "+str(somme %1024)+"o")
     return somme
 
+######
+# Question 4.4 - Classifieur naive bayes
 ######
 
 class MLNaiveBayesClassifier(APrioriClassifier) : 
@@ -617,8 +635,10 @@ class MAPNaiveBayesClassifier(APrioriClassifier) :
         #on renvoie la classe avec la plus grande probabilité (clé 0 ou 1 de probas ayant la plus grande valeur)
         return max(probas, key=probas.get)
 
+"""----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"""
+
 ######
-# 5 - Feature selection dans le cadre du classifier naive bayes
+# 5 - FEATURE SELECTION DANS LE CADRE DU CLASSIFIER NAIVE BAYES
 ######
 
 ######
@@ -736,9 +756,62 @@ class ReducedMAPNaiveBayesClassifier(MAPNaiveBayesClassifier) :
                 chaine = chaine+'target'+'->'+x+';'
         return utils.drawGraph(chaine)
 
+"""----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"""
 
+######
+# 6 - EVALUATION DES CLASSIFIEURS
+######
 
+######
+# Question 6.1 
+######
+######
+# Le point ideal serait celui le plus haut et le plus à droite possible. Ce sera donc celui qui representera le classifieur ayant la plus grande precision et le plus grand rappel possible.
+# Pour comparer les differents classifieurs dans une representation graphique, on pourrait les positionner en fonction de leur precision et de leur rappel sur un graphe.
+######
 
+######
+# Question 6.2
+######
 
+def mapClassifiers(dic, df):
+    """
+    A partir d'un dictionnaire dic avec pour un numero identifiant un classifieur et pour valeur le classifieur en question et un dataframe df, retourne une representation graphique de la precision et du rappel de chaque classifieur.
 
+    Parameters
+    ----------
+        dic : dic
+            Le dictionnaire identifiant chaque classifieur avec un numéro
+        df : pandas.DataFrame
+            Le dataframe sur lequel on appliquera les classifieurs
+    
+    Returns
+    -------
+        Un plt.figure dans lequel chaque clé du dictionnaire dic est positionné en fonction de la precision et du rappel du classifieur qu'elle represente.
+    """
+    x_list = []
+    y_list = []
+    z_list=[]
+    for key, value in dic.items():
+        x_list.append(value.statsOnDF(df)["Précision"])
+        y_list.append(value.statsOnDF(df)["Rappel"])
+        z_list.append(key)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plt.scatter(x_list, y_list, c="r", marker="x")
+    plt.xlabel("Precision du classifieur")
+    plt.ylabel("Rappel du classifieur")
+
+    for i, txt in enumerate(z_list):
+        ax.text(x_list[i], y_list[i], txt)
+    
+    plt.show()
+
+######
+# Question 6.3 - Conclusion
+######
+######
+# Le classifieur avec la plus grande precision est celui n°7 (Version réduite naive Bayes utilisant le maximum de vraisemblance) car c'est le point le plus a droite qu'on obtient sur les representations graphiques appliquées à la base de données de test et d'entrainement.
+# Le classifieur avec le plus grand rappel est cependant celui n°1 (Version a priori) car c'est le point le plus haut qu'on obtient dans les deux représentations graphiques.
+# Il faudrait donc un classifieur utilisant ces deux methodes pour obtenir des estimations plus fiables.
 ######
