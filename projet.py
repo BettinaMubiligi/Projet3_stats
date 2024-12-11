@@ -704,7 +704,7 @@ class ReducedMLNaiveBayesClassifier(MLNaiveBayesClassifier) :
     Returns
     -------
       Image
-        l'image représentant le graphe
+        l'image représentant le graphe selon les dépendances des variables.
     """
         liste_colonnes = self.attr
         chaine = " "
@@ -744,7 +744,7 @@ class ReducedMAPNaiveBayesClassifier(MAPNaiveBayesClassifier) :
     Returns
     -------
       Image
-        l'image représentant le graphe
+        l'image représentant le graphe selon les dépendances des variables.
     """
         liste_colonnes = self.attr
         chaine = " "
