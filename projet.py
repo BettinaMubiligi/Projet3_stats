@@ -298,7 +298,8 @@ class MAP2DClassifier(APrioriClassifier) :
 ######
 # Question 2.4 : Comparaison
 ######
-# Nous préférons le modèle de classifieur par vraisemblance (ML2DClassifier) parce que sa précision est globalement meilleure que les autres modèles
+# Nous préférons le modèle de classifieur par vraisemblance (ML2DClassifier) parce que sa précision et son rappek moyen 
+# sont globalement meilleurs que les autres modèles
 # et aussi parce que le modèle permet une estimation plus nuancée de la classe que le modèle à postériori et le modèle à priori.
 ######
 
@@ -811,7 +812,10 @@ def mapClassifiers(dic, df):
 # Question 6.3 - Conclusion
 ######
 ######
+# Note : Il semblerait que les classifieurs "4": MAPNaiveBayesClassifier(train), et "6":ReducedMAPNaiveBayesClassifier(train,0.01) ne renvoient pas les bonnes valeurs 
+#de précicion et de rappel pour le graphe 1 et 2, ainsi que les classifieurs "3" et "7" pour le graphe 2. Cela peut-être dû à un problème de calcul des probabilités des variables
+#indépendantes.
 # Le classifieur avec la plus grande precision est celui n°7 (Version réduite naive Bayes utilisant le maximum de vraisemblance) car c'est le point le plus a droite qu'on obtient sur les representations graphiques appliquées à la base de données de test et d'entrainement.
 # Le classifieur avec le plus grand rappel est cependant celui n°1 (Version a priori) car c'est le point le plus haut qu'on obtient dans les deux représentations graphiques.
-# Il faudrait donc un classifieur utilisant ces deux methodes pour obtenir des estimations plus fiables.
+# Il faudrait donc un classifieur avec une précision et un rappel les plus élevés possible  pour obtenir des estimations plus fiables.
 ######
