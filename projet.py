@@ -298,7 +298,7 @@ class MAP2DClassifier(APrioriClassifier) :
 ######
 # Question 2.4 : Comparaison
 ######
-# Nous préférons le modèle de classifieur par vraisemblance (ML2DClassifier) parce que sa précision et son rappek moyen 
+# Nous préférons le modèle de classifieur par vraisemblance (ML2DClassifier) parce que sa précision et son rappel moyen 
 # sont globalement meilleurs que les autres modèles
 # et aussi parce que le modèle permet une estimation plus nuancée de la classe que le modèle à postériori et le modèle à priori.
 ######
@@ -418,21 +418,20 @@ def nbParamsIndep(data):
 ######
 # Question 4.1: Exemple
 ######
-""" Contruction d'un graphe orienté pour représenter une factorisation de loi jointe avec des variables indépendantes :
-    On utilise la fonction utils.drawGraphHorizontal("E;D;C;B;A") où représentée par un nœud isolé sans aucune arête.
- """    
-""" Contruction d'un graphe orienté pour représenter une factorisation de loi jointe avec des variables sans indépendance :
-    On utilise la fonction utils.drawGraphHorizontal("A->B->C;A->D->E").
- """ 
+# Contruction d'un graphe orienté pour représenter une factorisation de loi jointe avec des variables indépendantes :
+# On utilise la fonction utils.drawGraphHorizontal("E;D;C;B;A") où représentée par un nœud isolé sans aucune arête.
+#
+# Contruction d'un graphe orienté pour représenter une factorisation de loi jointe avec des variables sans indépendance :
+# On utilise la fonction utils.drawGraphHorizontal("A->B->C;A->D->E"). 
 ######
 
 ######
 # Question 4.2: Naive Bayes
 ######
-"""  Décomposision de la vraisemblance P(attr1, attr2, attr3, ....|target) =  P(attr1 | target ) * P(attr2 | target )*P(attr3 | target ) ... 
-
-    Décomposision de la distribution a posteriori  
-  P(target | attr1, attr2, attr3, ....) = ( P(attr1, attr2, attr3...|target) * P(target)) / P(attr1, attr2, attr3...) """
+# Décomposision de la vraisemblance P(attr1, attr2, attr3, ....|target) =  P(attr1 | target ) * P(attr2 | target )*P(attr3 | target ) ... 
+#
+# Décomposision de la distribution a posteriori  
+# P(target | attr1, attr2, attr3, ....) = ( P(attr1, attr2, attr3...|target) * P(target)) / P(attr1, attr2, attr3...)
 ######
 
 ######
@@ -697,7 +696,7 @@ class ReducedMLNaiveBayesClassifier(MLNaiveBayesClassifier) :
     
     def draw(self):
         """
-    Dessine un graph à partir d'une d'une liste d'attributs, transformée en chaine.
+    Dessine un graph à partir d'une liste d'attributs, transformée en chaine.
 
     Parameters
     ----------
@@ -817,5 +816,5 @@ def mapClassifiers(dic, df):
 #indépendantes.
 # Le classifieur avec la plus grande precision est celui n°7 (Version réduite naive Bayes utilisant le maximum de vraisemblance) car c'est le point le plus a droite qu'on obtient sur les representations graphiques appliquées à la base de données de test et d'entrainement.
 # Le classifieur avec le plus grand rappel est cependant celui n°1 (Version a priori) car c'est le point le plus haut qu'on obtient dans les deux représentations graphiques.
-# Il faudrait donc un classifieur avec une précision et un rappel les plus élevés possible  pour obtenir des estimations plus fiables.
+# Il faudrait donc un classifieur avec une précision et un rappel les plus élevés possible pour obtenir des estimations plus fiables.
 ######
